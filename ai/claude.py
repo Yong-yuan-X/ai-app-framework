@@ -1,6 +1,6 @@
 import os
 
-from .common import env_int, normalize_usage, post_json, split_system_messages
+from .common import endpoint_url, env_int, normalize_usage, post_json, split_system_messages
 
 
 def call_claude_chat(api_key, model, messages, options, ssl_context):
@@ -26,7 +26,7 @@ def call_claude_chat(api_key, model, messages, options, ssl_context):
         request_body["tools"] = [{"type": "web_search_20260209", "name": "web_search"}]
 
     data = post_json(
-        os.getenv("ANTHROPIC_API_URL") or "https://api.anthropic.com/v1/messages",
+        endpoint_url(options.get("base_url"), "/messages"),
         request_body,
         {
             "x-api-key": api_key,

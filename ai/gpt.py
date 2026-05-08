@@ -1,6 +1,6 @@
 import os
 
-from .common import env_int, post_json, responses_api_text
+from .common import endpoint_url, env_int, post_json, responses_api_text
 
 
 def call_gpt_chat(api_key, model, messages, options, ssl_context):
@@ -17,7 +17,7 @@ def call_gpt_chat(api_key, model, messages, options, ssl_context):
         request_body["reasoning"] = {"effort": os.getenv("OPENAI_REASONING_EFFORT") or "medium"}
 
     data = post_json(
-        os.getenv("OPENAI_RESPONSES_API_URL") or "https://api.openai.com/v1/responses",
+        endpoint_url(options.get("base_url"), "/responses"),
         request_body,
         {"Authorization": f"Bearer {api_key}"},
         env_int("OPENAI_TIMEOUT_SECONDS", 120),

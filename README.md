@@ -1,10 +1,8 @@
 # 自用 AI 独立框架
 
-
 <img width="2718" height="1704" alt="img_v3_0211b_cf86d7dd-c5b3-4f36-b8ca-543c7c66a9bg" src="https://github.com/user-attachments/assets/c47a5c9d-8de1-4707-a892-3de8071a5ae5" />
 
-
-轻量 Python 后端 + 静态前端的本地 AI 聊天框架。另有 [繁体中文](README.zh-HK.md) 和 [English](README.en.md)。
+轻量 Python 后端 + 静态前端的本地 AI 聊天框架。另有 [English](README.en.md)。
 
 ## 运行
 
@@ -26,27 +24,34 @@ PORT=8081 python3 app.py
 
 在页面左下角可修改聊天模型配置和语音配置；配置会保存到本地 `.env`。
 
-聊天厂商：小米、豆包、千问、GPT、Claude、Gemini。每个厂商可自行填写模型名和 API Key，并可开启联网搜索或 Thinking。
+聊天厂商：小米、豆包、千问、GPT、Claude、Gemini、DeepSeek。每个厂商可自行填写模型名、Base URL 和 API Key，并可开启联网搜索或 Thinking。
+
+语音厂商：小米、OpenAI、Gemini。每个厂商可自行填写语音模型名、Base URL、音色和 API Key。
 
 常用环境变量：
 
 ```text
 AI_PROVIDER
 AI_MODEL
+TTS_PROVIDER
 MIMO_API_KEY
 DOUBAO_API_KEY
 QWEN_API_KEY
 OPENAI_API_KEY
+DEEPSEEK_API_KEY
 ANTHROPIC_API_KEY
 GEMINI_API_KEY
 MIMO_TTS_API_KEY
+MIMO_TTS_API_URL
 MIMO_TTS_MODEL
 MIMO_TTS_VOICE
+OPENAI_TTS_API_KEY
+OPENAI_TTS_API_URL
+GEMINI_TTS_API_KEY
+GEMINI_TTS_API_URL
 AI_RATE_LIMIT_PER_HOUR
 AI_MAX_REQUEST_SIZE_BYTES
 ```
-
-语音朗读当前使用小米 MiMo TTS。未配置 `MIMO_TTS_API_KEY` 时，会尝试复用 `MIMO_API_KEY`。
 
 ## 功能
 
@@ -66,4 +71,3 @@ AI_MAX_REQUEST_SIZE_BYTES
 
 
 如果遇到bug或者页面修改建议，欢迎提出issue
-

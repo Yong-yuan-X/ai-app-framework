@@ -2,7 +2,13 @@ import os
 import ssl
 from pathlib import Path
 
-from ai import PROVIDER_API_KEY_ENV, PROVIDER_LABELS, PROVIDER_MODEL_SUGGESTIONS, normalize_provider
+from ai import (
+    PROVIDER_API_KEY_ENV,
+    PROVIDER_BASE_URL_ENV,
+    PROVIDER_LABELS,
+    PROVIDER_MODEL_SUGGESTIONS,
+    normalize_provider,
+)
 
 try:
     import certifi
@@ -43,18 +49,50 @@ PORT = int(os.getenv("PORT", "8080"))
 AI_PROVIDER = os.getenv("AI_PROVIDER", "xiaomi")
 AI_MODEL = os.getenv("AI_MODEL", "")
 
-MIMO_TTS_API_URL = os.getenv("MIMO_TTS_API_URL") or "https://api.xiaomimimo.com/v1/chat/completions"
-MIMO_TTS_MODEL = os.getenv("MIMO_TTS_MODEL") or "mimo-v2.5-tts"
-MIMO_TTS_VOICE = os.getenv("MIMO_TTS_VOICE") or "mimo_default"
+MIMO_TTS_API_URL = os.getenv("MIMO_TTS_API_URL", "")
+MIMO_TTS_MODEL = os.getenv("MIMO_TTS_MODEL", "")
+MIMO_TTS_VOICE = os.getenv("MIMO_TTS_VOICE", "")
 MIMO_TTS_RESPONSE_FORMAT = os.getenv("MIMO_TTS_RESPONSE_FORMAT") or "mp3"
+TTS_PROVIDER = os.getenv("TTS_PROVIDER", "xiaomi")
 
-ALLOWED_TTS_FORMATS = {"mp3", "wav", "opus", "flac", "pcm", "b64_json"}
+TTS_PROVIDER_LABELS = {
+    "xiaomi": "小米",
+    "openai": "OpenAI",
+    "gemini": "Gemini",
+}
+
+TTS_CONFIG = {
+    "xiaomi": {
+        "api_key_env": "MIMO_TTS_API_KEY",
+        "api_key_fallbacks": ["MIMO_API_KEY"],
+        "base_url_env": "MIMO_TTS_API_URL",
+        "model_env": "MIMO_TTS_MODEL",
+        "voice_env": "MIMO_TTS_VOICE",
+    },
+    "openai": {
+        "api_key_env": "OPENAI_TTS_API_KEY",
+        "api_key_fallbacks": ["OPENAI_API_KEY"],
+        "base_url_env": "OPENAI_TTS_API_URL",
+        "model_env": "OPENAI_TTS_MODEL",
+        "voice_env": "OPENAI_TTS_VOICE",
+    },
+    "gemini": {
+        "api_key_env": "GEMINI_TTS_API_KEY",
+        "api_key_fallbacks": ["GEMINI_API_KEY"],
+        "base_url_env": "GEMINI_TTS_API_URL",
+        "model_env": "GEMINI_TTS_MODEL",
+        "voice_env": "GEMINI_TTS_VOICE",
+    },
+}
+
+ALLOWED_TTS_FORMATS = {"mp3", "wav", "opus", "flac", "pcm", "aac", "b64_json"}
 TTS_CONTENT_TYPES = {
     "mp3": "audio/mpeg",
     "wav": "audio/wav",
     "opus": "audio/ogg",
     "flac": "audio/flac",
     "pcm": "audio/L16",
+    "aac": "audio/aac",
 }
 
 MAX_REQUEST_SIZE = int(os.getenv("AI_MAX_REQUEST_SIZE_BYTES", str(1024 * 1024 * 1024)))
@@ -86,7 +124,7 @@ def current_model():
     if not model and provider == "xiaomi":
         model = os.getenv("MIMO_MODEL", "").strip()
 
-    return model or PROVIDER_MODEL_SUGGESTIONS[provider][0]
+    return model
 
 
 def provider_api_key(provider=None):
@@ -100,6 +138,12 @@ def provider_api_key(provider=None):
         return os.getenv(provider_key) or os.getenv("QIANWEN_API_KEY") or os.getenv("AI_API_KEY") or ""
 
     return os.getenv(provider_key) or os.getenv("AI_API_KEY") or ""
+
+
+def provider_base_url(provider=None):
+    provider = normalize_provider(provider or current_provider())
+    base_url_env = PROVIDER_BASE_URL_ENV.get(provider, "AI_BASE_URL")
+    return os.getenv(base_url_env) or os.getenv("AI_BASE_URL") or ""
 
 
 def update_env_file(updates):
@@ -131,10 +175,12 @@ def update_env_file(updates):
 def config_payload(include_secret=False):
     provider = current_provider()
     api_key = provider_api_key(provider)
+    base_url = provider_base_url(provider)
 
     return {
         "provider": provider,
         "model": current_model(),
+        "baseUrl": base_url,
         "apiKey": api_key if include_secret else "",
         "apiKeySet": bool(api_key),
         "providers": [
@@ -149,15 +195,47 @@ def config_payload(include_secret=False):
 
 
 def tts_api_key():
-    return os.getenv("MIMO_TTS_API_KEY") or os.getenv("MIMO_API_KEY") or ""
+    provider = current_tts_provider()
+    config = TTS_CONFIG[provider]
+    api_key = os.getenv(config["api_key_env"]) or ""
+
+    if api_key:
+        return api_key
+
+    for fallback_env in config.get("api_key_fallbacks", []):
+        api_key = os.getenv(fallback_env) or ""
+        if api_key:
+            return api_key
+
+    return ""
+
+
+def normalize_tts_provider(provider):
+    value = str(provider or "xiaomi").strip().lower()
+    return value if value in TTS_PROVIDER_LABELS else "xiaomi"
+
+
+def current_tts_provider():
+    return normalize_tts_provider(os.getenv("TTS_PROVIDER", TTS_PROVIDER))
+
+
+def tts_provider_config(provider=None):
+    return TTS_CONFIG[normalize_tts_provider(provider or current_tts_provider())]
 
 
 def current_tts_model():
-    return os.getenv("MIMO_TTS_MODEL", MIMO_TTS_MODEL).strip() or "mimo-v2.5-tts"
+    config = tts_provider_config()
+    return os.getenv(config["model_env"], "").strip()
+
+
+def current_tts_base_url():
+    config = tts_provider_config()
+    return os.getenv(config["base_url_env"], "").strip()
 
 
 def current_tts_voice():
-    return os.getenv("MIMO_TTS_VOICE", MIMO_TTS_VOICE).strip() or "mimo_default"
+    config = tts_provider_config()
+    return os.getenv(config["voice_env"], "").strip()
 
 
 def current_tts_response_format():
@@ -166,12 +244,19 @@ def current_tts_response_format():
 
 
 def tts_config_payload(include_secret=False):
-    api_key = os.getenv("MIMO_TTS_API_KEY") or ""
+    provider = current_tts_provider()
+    config = tts_provider_config(provider)
+    api_key = os.getenv(config["api_key_env"]) or ""
+    fallback_key_set = any(bool(os.getenv(env)) for env in config.get("api_key_fallbacks", []))
 
     return {
+        "provider": provider,
         "model": current_tts_model(),
+        "baseUrl": current_tts_base_url(),
         "voice": current_tts_voice(),
         "apiKey": api_key if include_secret else "",
         "apiKeySet": bool(api_key),
-        "fallbackApiKeySet": bool(os.getenv("MIMO_API_KEY")),
+        "apiKeyEnv": config["api_key_env"],
+        "fallbackApiKeySet": fallback_key_set,
+        "providers": [{"value": value, "label": label} for value, label in TTS_PROVIDER_LABELS.items()],
     }

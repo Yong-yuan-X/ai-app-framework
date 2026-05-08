@@ -310,12 +310,22 @@ svg {
   color: var(--muted);
 }
 
-.field-control select {
+.field-control select,
+.field-control input {
   border: 0;
   outline: 0;
   color: #17211b;
   background: transparent;
   font: inherit;
+}
+
+.field-control input {
+  width: 150px;
+  min-width: 110px;
+}
+
+.field-control input::placeholder {
+  color: var(--muted);
 }
 
 .switch-control {

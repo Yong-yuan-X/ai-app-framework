@@ -22,6 +22,19 @@ def post_json(url, body, headers, timeout, ssl_context):
         return json.loads(response.read().decode("utf-8"))
 
 
+def endpoint_url(base_url, path):
+    base_url = str(base_url or "").strip().rstrip("/")
+    path = "/" + str(path or "").strip("/")
+
+    if not base_url:
+        raise ValueError("Base URL 不能为空")
+
+    if base_url.endswith(path):
+        return base_url
+
+    return f"{base_url}{path}"
+
+
 def split_system_messages(messages):
     system_parts = []
     chat_messages = []

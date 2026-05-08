@@ -4,7 +4,14 @@ import urllib.error
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from ai import PROVIDER_API_KEY_ENV, PROVIDER_LABELS, PROVIDER_MODEL_SUGGESTIONS, call_provider_chat, normalize_provider
+from ai import (
+    PROVIDER_API_KEY_ENV,
+    PROVIDER_BASE_URL_ENV,
+    PROVIDER_LABELS,
+    call_provider_chat,
+    normalize_model,
+    normalize_provider,
+)
 from core.http import api_error, binary_response, json_response, read_json_body
 from core.messages import normalize_messages
 from core.rate_limit import is_rate_limited
@@ -18,12 +25,15 @@ from core.settings import (
     config_payload,
     current_provider,
     provider_api_key,
+    provider_base_url,
     tts_api_key,
     tts_config_payload,
+    tts_provider_config,
+    normalize_tts_provider,
     update_env_file,
 )
 from core.storage import init_db, load_conversations, save_conversations
-from core.tts import build_tts_request_body, call_tts_api
+from core.tts import synthesize_tts
 
 
 class AIAppHandler(BaseHTTPRequestHandler):
@@ -45,11 +55,11 @@ class AIAppHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/config":
-            json_response(self, 200, config_payload())
+            json_response(self, 200, config_payload(include_secret=True))
             return
 
         if path == "/api/tts-config":
-            json_response(self, 200, tts_config_payload())
+            json_response(self, 200, tts_config_payload(include_secret=True))
             return
 
         self.serve_static()
@@ -107,7 +117,8 @@ class AIAppHandler(BaseHTTPRequestHandler):
         try:
             payload = read_json_body(self, 64 * 1024)
             provider = normalize_provider(payload.get("provider"))
-            model = str(payload.get("model") or "").strip()
+            model = normalize_model(provider, payload.get("model"))
+            base_url = str(payload.get("baseUrl") or "").strip()
             api_key = str(payload.get("apiKey") or "").strip()
 
             if provider not in PROVIDER_LABELS:
@@ -118,61 +129,79 @@ class AIAppHandler(BaseHTTPRequestHandler):
                 json_response(self, 400, {"error": "模型不能为空"})
                 return
 
-            if "\n" in model or "\r" in model or "\n" in api_key or "\r" in api_key:
+            if not base_url:
+                json_response(self, 400, {"error": "Base URL 不能为空"})
+                return
+
+            if "\n" in model or "\r" in model or "\n" in base_url or "\r" in base_url or "\n" in api_key or "\r" in api_key:
                 json_response(self, 400, {"error": "配置内容不能包含换行"})
                 return
 
             api_key_env = PROVIDER_API_KEY_ENV.get(provider, "AI_API_KEY")
+            base_url_env = PROVIDER_BASE_URL_ENV.get(provider, "AI_BASE_URL")
             updates = {
                 "AI_PROVIDER": provider,
                 "AI_MODEL": model,
+                base_url_env: base_url,
             }
 
             os.environ["AI_PROVIDER"] = provider
             os.environ["AI_MODEL"] = model
+            os.environ[base_url_env] = base_url
 
             if api_key:
                 os.environ[api_key_env] = api_key
                 updates[api_key_env] = api_key
 
             update_env_file(updates)
-            json_response(self, 200, {"message": "配置已保存", "config": config_payload()})
+            json_response(self, 200, {"message": "配置已保存", "config": config_payload(include_secret=True)})
         except Exception as error:
             json_response(self, 500, {"error": str(error) or "保存配置失败"})
 
     def handle_save_tts_config(self):
         try:
             payload = read_json_body(self, 64 * 1024)
+            provider = normalize_tts_provider(payload.get("provider"))
             model = str(payload.get("model") or "").strip()
+            base_url = str(payload.get("baseUrl") or "").strip()
             voice = str(payload.get("voice") or "").strip()
             api_key = str(payload.get("apiKey") or "").strip()
+            config = tts_provider_config(provider)
 
             if not model:
                 json_response(self, 400, {"error": "语音模型不能为空"})
+                return
+
+            if not base_url:
+                json_response(self, 400, {"error": "语音 Base URL 不能为空"})
                 return
 
             if not voice:
                 json_response(self, 400, {"error": "音色不能为空"})
                 return
 
-            if "\n" in model or "\r" in model or "\n" in voice or "\r" in voice or "\n" in api_key or "\r" in api_key:
+            if "\n" in model or "\r" in model or "\n" in base_url or "\r" in base_url or "\n" in voice or "\r" in voice or "\n" in api_key or "\r" in api_key:
                 json_response(self, 400, {"error": "语音配置不能包含换行"})
                 return
 
             updates = {
-                "MIMO_TTS_MODEL": model,
-                "MIMO_TTS_VOICE": voice,
+                "TTS_PROVIDER": provider,
+                config["model_env"]: model,
+                config["base_url_env"]: base_url,
+                config["voice_env"]: voice,
             }
 
-            os.environ["MIMO_TTS_MODEL"] = model
-            os.environ["MIMO_TTS_VOICE"] = voice
+            os.environ["TTS_PROVIDER"] = provider
+            os.environ[config["model_env"]] = model
+            os.environ[config["base_url_env"]] = base_url
+            os.environ[config["voice_env"]] = voice
 
             if api_key:
-                os.environ["MIMO_TTS_API_KEY"] = api_key
-                updates["MIMO_TTS_API_KEY"] = api_key
+                os.environ[config["api_key_env"]] = api_key
+                updates[config["api_key_env"]] = api_key
 
             update_env_file(updates)
-            json_response(self, 200, {"message": "语音配置已保存", "config": tts_config_payload()})
+            json_response(self, 200, {"message": "语音配置已保存", "config": tts_config_payload(include_secret=True)})
         except Exception as error:
             json_response(self, 500, {"error": str(error) or "保存语音配置失败"})
 
@@ -187,6 +216,7 @@ class AIAppHandler(BaseHTTPRequestHandler):
             payload = read_json_body(self, MAX_REQUEST_SIZE)
             provider = normalize_provider(payload.get("provider") or current_provider())
             api_key = provider_api_key(provider)
+            base_url = str(payload.get("baseUrl") or provider_base_url(provider)).strip()
 
             if not api_key:
                 json_response(
@@ -196,9 +226,16 @@ class AIAppHandler(BaseHTTPRequestHandler):
                 )
                 return
 
-            requested_model = str(payload.get("model") or "").strip()
-            model = requested_model or PROVIDER_MODEL_SUGGESTIONS[provider][0]
+            model = normalize_model(provider, payload.get("model"))
             messages = normalize_messages(payload.get("messages"))
+
+            if not model:
+                json_response(self, 400, {"error": "模型不能为空，请先输入模型名"})
+                return
+
+            if not base_url:
+                json_response(self, 400, {"error": "Base URL 不能为空，请先在左下角“修改配置”里填写"})
+                return
 
             if not messages:
                 json_response(self, 400, {"error": "消息不能为空"})
@@ -212,6 +249,7 @@ class AIAppHandler(BaseHTTPRequestHandler):
                 {
                     "web_search": bool(payload.get("webSearch")),
                     "thinking": bool(payload.get("thinking")),
+                    "base_url": base_url,
                 },
                 SSL_CONTEXT,
             )
@@ -229,16 +267,15 @@ class AIAppHandler(BaseHTTPRequestHandler):
         api_key = tts_api_key()
 
         if not api_key:
-            json_response(self, 500, {"error": "本地未配置 MIMO_TTS_API_KEY，请先在左下角“修改语音配置”里填写"})
+            json_response(self, 500, {"error": "本地未配置语音 API_KEY，请先在左下角“修改语音配置”里填写"})
             return
 
         try:
             payload = read_json_body(self, 64 * 1024)
-            request_body, response_format = build_tts_request_body(payload.get("text"), payload.get("style"))
-            audio_body, content_type = call_tts_api(api_key, request_body, response_format)
+            audio_body, content_type = synthesize_tts(payload.get("text"), api_key, payload.get("style"))
             binary_response(self, 200, audio_body, content_type)
         except urllib.error.HTTPError as error:
-            api_error(self, error, "MiMo TTS 请求失败", "MiMo")
+            api_error(self, error, "TTS 请求失败", "TTS")
         except Exception as error:
             json_response(self, 500, {"error": str(error) or "语音生成失败"})
 

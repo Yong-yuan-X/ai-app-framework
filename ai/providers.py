@@ -1,4 +1,5 @@
 from .claude import call_claude_chat
+from .deepseek import call_deepseek_chat
 from .doubao import call_doubao_chat
 from .gemini import call_gemini_chat
 from .gpt import call_gpt_chat
@@ -13,6 +14,7 @@ PROVIDER_LABELS = {
     "gpt": "GPT",
     "claude": "Claude",
     "gemini": "Gemini",
+    "deepseek": "DeepSeek",
 }
 
 PROVIDER_ALIASES = {
@@ -23,12 +25,13 @@ PROVIDER_ALIASES = {
 }
 
 PROVIDER_MODEL_SUGGESTIONS = {
-    "xiaomi": ["mimo-v2.5", "mimo-v2-pro"],
-    "doubao": ["doubao-seed-1.6"],
-    "qwen": ["qwen-plus", "qwen-max", "qwen3-max"],
-    "gpt": ["gpt-5.5", "gpt-5.4", "gpt-4.1-mini"],
-    "claude": ["claude-opus-4-7", "claude-sonnet-4-6", "claude-opus-4-6"],
-    "gemini": ["gemini-2.5-pro", "gemini-2.5-flash"],
+    "xiaomi": [],
+    "doubao": [],
+    "qwen": [],
+    "gpt": [],
+    "claude": [],
+    "gemini": [],
+    "deepseek": [],
 }
 
 PROVIDER_API_KEY_ENV = {
@@ -38,6 +41,17 @@ PROVIDER_API_KEY_ENV = {
     "gpt": "OPENAI_API_KEY",
     "claude": "ANTHROPIC_API_KEY",
     "gemini": "GEMINI_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
+}
+
+PROVIDER_BASE_URL_ENV = {
+    "xiaomi": "MIMO_API_URL",
+    "doubao": "DOUBAO_BASE_URL",
+    "qwen": "QWEN_API_URL",
+    "gpt": "OPENAI_RESPONSES_API_URL",
+    "claude": "ANTHROPIC_API_URL",
+    "gemini": "GEMINI_API_URL",
+    "deepseek": "DEEPSEEK_API_URL",
 }
 
 PROVIDER_HANDLERS = {
@@ -47,6 +61,7 @@ PROVIDER_HANDLERS = {
     "gpt": call_gpt_chat,
     "claude": call_claude_chat,
     "gemini": call_gemini_chat,
+    "deepseek": call_deepseek_chat,
 }
 
 
@@ -54,6 +69,16 @@ def normalize_provider(provider):
     value = str(provider or "xiaomi").strip().lower()
     value = PROVIDER_ALIASES.get(value, value)
     return value if value in PROVIDER_LABELS else "xiaomi"
+
+
+def normalize_model(provider, model):
+    value = str(model or "").strip()
+    provider = normalize_provider(provider)
+
+    if provider == "xiaomi":
+        return value.lower()
+
+    return value
 
 
 def call_provider_chat(provider, api_key, model, messages, options, ssl_context):

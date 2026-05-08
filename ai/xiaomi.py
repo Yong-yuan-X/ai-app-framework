@@ -1,6 +1,4 @@
-import os
-
-from .common import assistant_text, env_int, post_json
+from .common import assistant_text, endpoint_url, env_int, post_json
 
 
 def call_xiaomi_chat(api_key, model, messages, options, ssl_context):
@@ -21,7 +19,7 @@ def call_xiaomi_chat(api_key, model, messages, options, ssl_context):
         request_body["tool_choice"] = "auto"
 
     data = post_json(
-        os.getenv("MIMO_API_URL") or "https://api.xiaomimimo.com/v1/chat/completions",
+        endpoint_url(options.get("base_url"), "/chat/completions"),
         request_body,
         {"api-key": api_key, "Authorization": f"Bearer {api_key}"},
         env_int("MIMO_TIMEOUT_SECONDS", 120),

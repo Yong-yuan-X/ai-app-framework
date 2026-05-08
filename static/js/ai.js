@@ -28,24 +28,218 @@ const configForm = document.getElementById("configForm");
 const ttsConfigForm = document.getElementById("ttsConfigForm");
 const configProviderSelect = document.getElementById("configProviderSelect");
 const configModelInput = document.getElementById("configModelInput");
+const configBaseUrlInput = document.getElementById("configBaseUrlInput");
 const configApiKeyInput = document.getElementById("configApiKeyInput");
 const configHint = document.getElementById("configHint");
 const ttsConfigModelInput = document.getElementById("ttsConfigModelInput");
+const ttsConfigProviderSelect = document.getElementById("ttsConfigProviderSelect");
+const ttsConfigBaseUrlInput = document.getElementById("ttsConfigBaseUrlInput");
 const ttsConfigVoiceInput = document.getElementById("ttsConfigVoiceInput");
 const ttsConfigApiKeyInput = document.getElementById("ttsConfigApiKeyInput");
 const ttsConfigHint = document.getElementById("ttsConfigHint");
+const languageToggle = document.getElementById("languageToggle");
 const modelSuggestions = document.getElementById("modelSuggestions");
 const adminOnlyLinks = document.querySelectorAll(".admin-only");
 const reviewLinks = [...document.querySelectorAll(".admin-only")].filter((item) => item.textContent.includes("审核"));
 
 const storageKeyPrefix = "foreverHubAiConversations";
+const languageStorageKey = "foreverHubAiLanguage";
 const textFilePattern = /^(text\/|application\/(json|xml|javascript|x-javascript))/;
 const readableExtensions = /\.(txt|md|csv|json|js|ts|tsx|jsx|py|java|go|rs|c|cpp|h|css|html|xml|yaml|yml|sql|log)$/i;
+const translations = {
+  zh: {
+    pageTitle: "自用AI · 独立框架",
+    metaDescription: "可独立运行的个人 AI 问答应用框架。",
+    conversationList: "对话列表",
+    backHome: "返回首页",
+    appName: "AI 助手",
+    newChat: "新建对话",
+    chatHistory: "历史对话",
+    emptyHistory: "暂无历史对话",
+    user: "用户",
+    settings: "修改配置",
+    chatConfig: "修改配置",
+    voiceConfig: "修改语音配置",
+    languageToggle: "English",
+    heroTitle: "今天想聊点什么？",
+    heroSubtitle: "我可以帮你解答问题、写作创作、总结信息、分析数据等",
+    chatPlaceholder: "输入你的问题",
+    attachFile: "添加附件",
+    voiceInput: "语音输入",
+    modelSettings: "模型设置",
+    provider: "厂商",
+    model: "模型",
+    modelProvider: "模型厂商",
+    aiModel: "AI 模型",
+    modelPlaceholder: "请输入模型名",
+    baseUrlPlaceholder: "请输入 Base URL",
+    apiKeyPlaceholder: "请输入 API Key",
+    webSearchTitle: "仅管理员可开启联网搜索",
+    webSearch: "联网搜索",
+    send: "发送",
+    stopGenerating: "停止生成",
+    configSavedLocal: "当前配置会保存到本地 .env 文件。",
+    cancel: "取消",
+    save: "保存",
+    voiceProvider: "语音厂商",
+    voiceModel: "语音模型",
+    voiceModelPlaceholder: "请输入语音模型名",
+    voiceBaseUrl: "语音 Base URL",
+    voiceBaseUrlPlaceholder: "请输入语音 Base URL",
+    voice: "音色",
+    voicePlaceholder: "请输入音色",
+    voiceApiKey: "语音 API_KEY",
+    voiceApiKeyPlaceholder: "请输入语音 API Key",
+    voiceConfigSavedLocal: "语音配置会保存到本地 .env 文件。",
+    apiKeyShown: "已显示当前保存的 API_KEY，修改后保存会覆盖原 Key。",
+    apiKeyMissing: "当前没有保存 API_KEY，请填写后保存。",
+    voiceApiKeyShown: "已显示当前保存的语音 API_KEY，修改后保存会覆盖原 Key。",
+    voiceApiKeyFallback: "未单独保存语音 API_KEY，当前会复用同厂商聊天 API_KEY。",
+    voiceApiKeyMissing: "当前没有保存语音 API_KEY，请填写后保存。",
+    newConversation: "新对话",
+    copy: "复制",
+    copied: "已复制",
+    readReply: "朗读回复",
+    reasoning: "思考过程",
+    thinking: "正在思考",
+    noSpeechText: "没有可朗读的内容。",
+    speechFailed: "语音生成失败",
+    audioFailed: "音频播放失败，请稍后重试。",
+    noCopyText: "没有可复制的内容。",
+    copyFailed: "复制失败，请检查浏览器剪贴板权限。",
+    inputTokens: "输入",
+    outputTokens: "输出",
+    totalTokens: "总计",
+    removeAttachment: "移除附件",
+    unknown: "未知",
+    attachment: "附件",
+    attachmentType: "类型",
+    attachmentSize: "大小",
+    nonTextAttachment: "非文本附件已记录文件信息。",
+    attachmentReadFailed: "读取失败。",
+    uploadedAttachments: "以下是本轮用户上传的附件内容：",
+    aiRequestFailed: "AI 请求失败",
+    noValidReply: "没有收到有效回复。",
+    analyzeAttachment: "请分析附件",
+    attachmentConversation: "附件对话",
+    truncatedWarning: "回复可能因为长度限制没有完整生成，可以让我“继续上面的内容”。",
+    requestFailedLater: "请求失败，请稍后再试。",
+    requestFailedPrefix: "请求失败：",
+    speechRecognitionUnsupported: "当前浏览器不支持语音转文字，建议使用 Chrome 或 Edge。",
+    speechRecognitionFailed: "语音识别失败，请检查麦克风权限。",
+    configSaved: "配置已保存",
+    configSaveFailed: "保存配置失败",
+    voiceConfigSaved: "语音配置已保存",
+    voiceConfigSaveFailed: "保存语音配置失败",
+    providerXiaomi: "小米",
+    providerDoubao: "豆包",
+    providerQwen: "千问",
+    providerGpt: "GPT",
+    providerClaude: "Claude",
+    providerGemini: "Gemini",
+    providerDeepseek: "DeepSeek",
+    providerOpenai: "OpenAI",
+  },
+  en: {
+    pageTitle: "Personal AI · Standalone Framework",
+    metaDescription: "A standalone personal AI chat app framework.",
+    conversationList: "Conversation list",
+    backHome: "Back home",
+    appName: "AI Assistant",
+    newChat: "New chat",
+    chatHistory: "Chat history",
+    emptyHistory: "No chat history",
+    user: "User",
+    settings: "Settings",
+    chatConfig: "Chat settings",
+    voiceConfig: "Voice settings",
+    languageToggle: "中文",
+    heroTitle: "What would you like to discuss?",
+    heroSubtitle: "Ask questions, write, summarize information, analyze data, and more",
+    chatPlaceholder: "Type your question",
+    attachFile: "Attach file",
+    voiceInput: "Voice input",
+    modelSettings: "Model settings",
+    provider: "Provider",
+    model: "Model",
+    modelProvider: "Model provider",
+    aiModel: "AI model",
+    modelPlaceholder: "Enter model name",
+    baseUrlPlaceholder: "Enter Base URL",
+    apiKeyPlaceholder: "Enter API Key",
+    webSearchTitle: "Web search is admin-only",
+    webSearch: "Web search",
+    send: "Send",
+    stopGenerating: "Stop generating",
+    configSavedLocal: "Settings are saved to the local .env file.",
+    cancel: "Cancel",
+    save: "Save",
+    voiceProvider: "Voice provider",
+    voiceModel: "Voice model",
+    voiceModelPlaceholder: "Enter voice model name",
+    voiceBaseUrl: "Voice Base URL",
+    voiceBaseUrlPlaceholder: "Enter voice Base URL",
+    voice: "Voice",
+    voicePlaceholder: "Enter voice",
+    voiceApiKey: "Voice API_KEY",
+    voiceApiKeyPlaceholder: "Enter voice API Key",
+    voiceConfigSavedLocal: "Voice settings are saved to the local .env file.",
+    apiKeyShown: "The saved API_KEY is shown. Saving changes will overwrite it.",
+    apiKeyMissing: "No API_KEY is saved. Enter one and save.",
+    voiceApiKeyShown: "The saved voice API_KEY is shown. Saving changes will overwrite it.",
+    voiceApiKeyFallback: "No separate voice API_KEY is saved. The chat API_KEY for this provider will be reused.",
+    voiceApiKeyMissing: "No voice API_KEY is saved. Enter one and save.",
+    newConversation: "New chat",
+    copy: "Copy",
+    copied: "Copied",
+    readReply: "Read reply",
+    reasoning: "Reasoning",
+    thinking: "Thinking",
+    noSpeechText: "No text available to read.",
+    speechFailed: "Voice generation failed",
+    audioFailed: "Audio playback failed. Please try again.",
+    noCopyText: "No text available to copy.",
+    copyFailed: "Copy failed. Check clipboard permissions.",
+    inputTokens: "Input",
+    outputTokens: "Output",
+    totalTokens: "Total",
+    removeAttachment: "Remove attachment",
+    unknown: "unknown",
+    attachment: "Attachment",
+    attachmentType: "type",
+    attachmentSize: "size",
+    nonTextAttachment: "Non-text attachment metadata was recorded.",
+    attachmentReadFailed: "read failed.",
+    uploadedAttachments: "Uploaded attachment contents for this turn:",
+    aiRequestFailed: "AI request failed",
+    noValidReply: "No valid reply received.",
+    analyzeAttachment: "Please analyze the attachment",
+    attachmentConversation: "Attachment chat",
+    truncatedWarning: "The reply may be incomplete because it hit a length limit. You can ask me to continue.",
+    requestFailedLater: "Request failed. Please try again later.",
+    requestFailedPrefix: "Request failed: ",
+    speechRecognitionUnsupported: "This browser does not support speech recognition. Try Chrome or Edge.",
+    speechRecognitionFailed: "Speech recognition failed. Check microphone permissions.",
+    configSaved: "Settings saved",
+    configSaveFailed: "Failed to save settings",
+    voiceConfigSaved: "Voice settings saved",
+    voiceConfigSaveFailed: "Failed to save voice settings",
+    providerXiaomi: "Xiaomi",
+    providerDoubao: "Doubao",
+    providerQwen: "Qwen",
+    providerGpt: "GPT",
+    providerClaude: "Claude",
+    providerGemini: "Gemini",
+    providerDeepseek: "DeepSeek",
+    providerOpenai: "OpenAI",
+  },
+};
+let currentLanguage = localStorage.getItem(languageStorageKey) === "en" ? "en" : "zh";
 
 const systemPrompt = {
   role: "system",
   content:
-    "回答要清晰、实用，默认使用中文。直接回答用户问题，不要寒暄，不要自我介绍，不要使用“你好呀”“我是小米的MiMo”“很高兴为你服务”等固定开场。可以使用 Markdown 组织内容，例如标题、列表、代码块和加粗。不要使用 emoji、颜文字或装饰性表情符号。",
+    "回答要清晰、实用，默认使用中文(根据用户输入的语言切换语言，比如说用户用全英文问，就要用英语回答)。直接回答用户问题，不要寒暄，不要自我介绍，不要使用“你好呀”“我是小米的MiMo”“很高兴为你服务”等固定开场。可以使用 Markdown 组织内容，例如标题、列表、代码块和加粗。不要使用 emoji、颜文字或装饰性表情符号。",
 };
 
 let conversations = [];
@@ -62,21 +256,30 @@ let isGenerating = false;
 let saveConversationsTimer = null;
 let aiConfig = {
   provider: "xiaomi",
-  model: "mimo-v2.5",
+  model: "",
+  baseUrl: "",
   providers: [
-    { value: "xiaomi", label: "小米", models: ["mimo-v2.5", "mimo-v2-pro"] },
-    { value: "doubao", label: "豆包", models: ["doubao-seed-1.6"] },
-    { value: "qwen", label: "千问", models: ["qwen-plus", "qwen-max", "qwen3-max"] },
-    { value: "gpt", label: "GPT", models: ["gpt-5.5", "gpt-5.4", "gpt-4.1-mini"] },
-    { value: "claude", label: "Claude", models: ["claude-opus-4-7", "claude-sonnet-4-6", "claude-opus-4-6"] },
-    { value: "gemini", label: "Gemini", models: ["gemini-2.5-pro", "gemini-2.5-flash"] },
+    { value: "xiaomi", label: "小米", models: [] },
+    { value: "doubao", label: "豆包", models: [] },
+    { value: "qwen", label: "千问", models: [] },
+    { value: "gpt", label: "GPT", models: [] },
+    { value: "claude", label: "Claude", models: [] },
+    { value: "gemini", label: "Gemini", models: [] },
+    { value: "deepseek", label: "DeepSeek", models: [] },
   ],
 };
 let ttsConfig = {
-  model: "mimo-v2.5-tts",
-  voice: "mimo_default",
+  provider: "xiaomi",
+  model: "",
+  baseUrl: "",
+  voice: "",
   apiKeySet: false,
   fallbackApiKeySet: false,
+  providers: [
+    { value: "xiaomi", label: "小米" },
+    { value: "openai", label: "OpenAI" },
+    { value: "gemini", label: "Gemini" },
+  ],
 };
 const speechStore = new Map();
 const copyStore = new Map();
@@ -92,6 +295,70 @@ const stopIcon = `
     <path d="M8 8H16V16H8Z" />
   </svg>
 `;
+
+const t = (key) => translations[currentLanguage]?.[key] || translations.zh[key] || key;
+
+const providerLabel = (provider = {}) => {
+  const labels = {
+    xiaomi: t("providerXiaomi"),
+    doubao: t("providerDoubao"),
+    qwen: t("providerQwen"),
+    gpt: t("providerGpt"),
+    claude: t("providerClaude"),
+    gemini: t("providerGemini"),
+    deepseek: t("providerDeepseek"),
+    openai: t("providerOpenai"),
+  };
+
+  return labels[provider.value] || provider.label || provider.value;
+};
+
+const updateProfileName = () => {
+  if (!profileName) {
+    return;
+  }
+
+  if (!currentUser || currentUser.username === "local" || currentUser.displayName === "本地用户") {
+    profileName.textContent = t("user");
+    return;
+  }
+
+  profileName.textContent = currentUser.displayName || currentUser.username;
+};
+
+const applyLanguage = () => {
+  document.documentElement.lang = currentLanguage === "en" ? "en" : "zh-CN";
+  document.title = t("pageTitle");
+
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    element.setAttribute("placeholder", t(element.dataset.i18nPlaceholder));
+  });
+
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+    element.setAttribute("aria-label", t(element.dataset.i18nAriaLabel));
+  });
+
+  document.querySelectorAll("[data-i18n-title]").forEach((element) => {
+    element.setAttribute("title", t(element.dataset.i18nTitle));
+  });
+
+  document.querySelectorAll("[data-i18n-content]").forEach((element) => {
+    element.setAttribute("content", t(element.dataset.i18nContent));
+  });
+
+  renderProviderOptions();
+  renderComposerModelOptions();
+  applyTtsConfigToUi();
+  renderAttachments();
+  renderConversation();
+  renderHistory();
+  updateProfileName();
+  setLoading(isGenerating);
+};
 
 const getStorageKey = () => `${storageKeyPrefix}:${currentUser?.id || currentUser?.username || "guest"}`;
 
@@ -180,7 +447,7 @@ const renderModelSuggestions = (providerValue = aiConfig.provider) => {
 
 const renderProviderOptions = () => {
   const optionsHtml = aiConfig.providers
-    .map((provider) => `<option value="${escapeHtml(provider.value)}">${escapeHtml(provider.label)}</option>`)
+    .map((provider) => `<option value="${escapeHtml(provider.value)}">${escapeHtml(providerLabel(provider))}</option>`)
     .join("");
 
   if (configProviderSelect) {
@@ -197,12 +464,8 @@ const renderComposerModelOptions = () => {
     return;
   }
 
-  const models = modelOptionsForProvider();
-  const uniqueModels = [...new Set([aiConfig.model, ...models].filter(Boolean))];
-  modelSelect.innerHTML = uniqueModels
-    .map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`)
-    .join("");
-  modelSelect.value = aiConfig.model;
+  modelSelect.value = aiConfig.model || "";
+  modelSelect.placeholder = t("modelPlaceholder");
 };
 
 const applyConfigToUi = () => {
@@ -222,14 +485,18 @@ const applyConfigToUi = () => {
     configModelInput.value = aiConfig.model;
   }
 
+  if (configBaseUrlInput) {
+    configBaseUrlInput.value = aiConfig.baseUrl || "";
+  }
+
   if (configApiKeyInput) {
-    configApiKeyInput.value = "";
+    configApiKeyInput.value = aiConfig.apiKey || "";
   }
 
   if (configHint) {
     configHint.textContent = aiConfig.apiKeySet
-      ? "已保存 API_KEY；留空保存时不会覆盖现有 Key。"
-      : "当前没有保存 API_KEY，请填写后保存。";
+      ? t("apiKeyShown")
+      : t("apiKeyMissing");
   }
 };
 
@@ -255,25 +522,36 @@ const loadConfig = async () => {
 };
 
 const applyTtsConfigToUi = () => {
+  if (ttsConfigProviderSelect) {
+    ttsConfigProviderSelect.innerHTML = (ttsConfig.providers || [])
+      .map((provider) => `<option value="${escapeHtml(provider.value)}">${escapeHtml(providerLabel(provider))}</option>`)
+      .join("");
+    ttsConfigProviderSelect.value = ttsConfig.provider || "xiaomi";
+  }
+
   if (ttsConfigModelInput) {
-    ttsConfigModelInput.value = ttsConfig.model || "mimo-v2.5-tts";
+    ttsConfigModelInput.value = ttsConfig.model || "";
+  }
+
+  if (ttsConfigBaseUrlInput) {
+    ttsConfigBaseUrlInput.value = ttsConfig.baseUrl || "";
   }
 
   if (ttsConfigVoiceInput) {
-    ttsConfigVoiceInput.value = ttsConfig.voice || "mimo_default";
+    ttsConfigVoiceInput.value = ttsConfig.voice || "";
   }
 
   if (ttsConfigApiKeyInput) {
-    ttsConfigApiKeyInput.value = "";
+    ttsConfigApiKeyInput.value = ttsConfig.apiKey || "";
   }
 
   if (ttsConfigHint) {
     if (ttsConfig.apiKeySet) {
-      ttsConfigHint.textContent = "已保存语音 API_KEY；留空保存时不会覆盖现有 Key。";
+      ttsConfigHint.textContent = t("voiceApiKeyShown");
     } else if (ttsConfig.fallbackApiKeySet) {
-      ttsConfigHint.textContent = "未单独保存语音 API_KEY，当前会复用 MIMO_API_KEY。";
+      ttsConfigHint.textContent = t("voiceApiKeyFallback");
     } else {
-      ttsConfigHint.textContent = "当前没有保存语音 API_KEY，请填写后保存。";
+      ttsConfigHint.textContent = t("voiceApiKeyMissing");
     }
   }
 };
@@ -313,7 +591,7 @@ const updateHeroVisibility = () => {
 function createConversation() {
   const conversationItem = {
     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-    title: "新对话",
+    title: t("newConversation"),
     messages: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -326,7 +604,7 @@ function createConversation() {
 }
 
 const formatTime = () => {
-  return new Intl.DateTimeFormat("zh-CN", {
+  return new Intl.DateTimeFormat(currentLanguage === "en" ? "en-US" : "zh-CN", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -566,7 +844,7 @@ const setLoading = (isLoading) => {
   if (sendButton) {
     sendButton.disabled = false;
     sendButton.classList.toggle("stop-button", isLoading);
-    sendButton.setAttribute("aria-label", isLoading ? "停止生成" : "发送");
+    sendButton.setAttribute("aria-label", isLoading ? t("stopGenerating") : t("send"));
     sendButton.innerHTML = isLoading ? stopIcon : sendIcon;
   }
 };
@@ -578,14 +856,14 @@ const setError = (message = "") => {
 const messageActions = (speechId = "", copyId = "") => {
   return `
     <div class="message-actions">
-      <button class="speech-button" type="button" aria-label="朗读回复" data-speech-id="${speechId}">
+      <button class="speech-button" type="button" aria-label="${escapeHtml(t("readReply"))}" data-speech-id="${speechId}">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M11 5L6 9H3V15H6L11 19V5Z" />
           <path d="M16 9.5A4 4 0 0 1 16 14.5" />
           <path d="M19 7A8 8 0 0 1 19 17" />
         </svg>
       </button>
-      <button class="copy-button" type="button" aria-label="复制" data-copy-id="${copyId}">
+      <button class="copy-button" type="button" aria-label="${escapeHtml(t("copy"))}" data-copy-id="${copyId}">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M8 8H19V19H8Z" />
           <path d="M5 16H4A1 1 0 0 1 3 15V5A1 1 0 0 1 4 4H14A1 1 0 0 1 15 5V6" />
@@ -607,15 +885,15 @@ const tokenUsageText = (usage = null) => {
   const parts = [];
 
   if (Number.isFinite(Number(promptTokens))) {
-    parts.push(`输入 ${Number(promptTokens)}`);
+    parts.push(`${t("inputTokens")} ${Number(promptTokens)}`);
   }
 
   if (Number.isFinite(Number(completionTokens))) {
-    parts.push(`输出 ${Number(completionTokens)}`);
+    parts.push(`${t("outputTokens")} ${Number(completionTokens)}`);
   }
 
   if (Number.isFinite(Number(totalTokens))) {
-    parts.push(`总计 ${Number(totalTokens)}`);
+    parts.push(`${t("totalTokens")} ${Number(totalTokens)}`);
   }
 
   return parts.length ? `Token：${parts.join(" / ")}` : "";
@@ -647,7 +925,7 @@ const addAssistantMessage = (message, reasoning = "", time = formatTime(), warni
   const reasoningBlock = reasoning
     ? `
       <details class="reasoning-block">
-        <summary>思考过程</summary>
+        <summary>${escapeHtml(t("reasoning"))}</summary>
         <div class="markdown-body">${renderMarkdown(reasoning)}</div>
       </details>
     `
@@ -702,7 +980,7 @@ const playSpeech = async (button) => {
   const text = speechStore.get(button.dataset.speechId);
 
   if (!text) {
-    setError("没有可朗读的内容。");
+    setError(t("noSpeechText"));
     return;
   }
 
@@ -731,7 +1009,7 @@ const playSpeech = async (button) => {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       const detailMessage =
-        data.detail?.error?.message || data.detail?.message || data.detail?.raw || data.error || "语音生成失败";
+        data.detail?.error?.message || data.detail?.message || data.detail?.raw || data.error || t("speechFailed");
       throw new Error(detailMessage);
     }
 
@@ -743,13 +1021,13 @@ const playSpeech = async (button) => {
 
     activeAudio.addEventListener("ended", stopSpeech, { once: true });
     activeAudio.addEventListener("error", () => {
-      setError("音频播放失败，请稍后重试。");
+      setError(t("audioFailed"));
       stopSpeech();
     });
 
     await activeAudio.play();
   } catch (error) {
-    setError(error.message || "语音生成失败");
+    setError(error.message || t("speechFailed"));
     stopSpeech();
   }
 };
@@ -758,7 +1036,7 @@ const copyText = async (button) => {
   const text = copyStore.get(button.dataset.copyId);
 
   if (!text) {
-    setError("没有可复制的内容。");
+    setError(t("noCopyText"));
     return;
   }
 
@@ -779,13 +1057,13 @@ const copyText = async (button) => {
 
     setError("");
     button.classList.add("copied");
-    button.setAttribute("aria-label", "已复制");
+    button.setAttribute("aria-label", t("copied"));
     setTimeout(() => {
       button.classList.remove("copied");
-      button.setAttribute("aria-label", "复制");
+      button.setAttribute("aria-label", t("copy"));
     }, 1200);
   } catch {
-    setError("复制失败，请检查浏览器剪贴板权限。");
+    setError(t("copyFailed"));
   }
 };
 
@@ -806,7 +1084,7 @@ const addThinkingMessage = () => {
         </span>
         <div class="message-bubble assistant-bubble thinking-bubble">
           <span class="thinking-spinner" aria-hidden="true"></span>
-          <span>正在思考</span>
+          <span>${escapeHtml(t("thinking"))}</span>
         </div>
       </article>
     `
@@ -860,7 +1138,7 @@ const updateConversationMeta = (userMessage) => {
   const active = currentConversation();
   active.updatedAt = Date.now();
 
-  if (active.title === "新对话") {
+  if (active.title === translations.zh.newConversation || active.title === translations.en.newConversation) {
     active.title = userMessage.slice(0, 24);
   }
 
@@ -874,7 +1152,7 @@ const renderAttachments = () => {
       (file, index) => `
         <span class="attachment-chip">
           ${escapeHtml(file.name)}
-          <button type="button" aria-label="移除附件" data-attachment-index="${index}">×</button>
+          <button type="button" aria-label="${escapeHtml(t("removeAttachment"))}" data-attachment-index="${index}">×</button>
         </span>
       `
     )
@@ -886,18 +1164,18 @@ const readAttachment = (file) => {
     const isReadable = textFilePattern.test(file.type) || readableExtensions.test(file.name);
 
     if (!isReadable) {
-      resolve(`附件：${file.name}，类型：${file.type || "未知"}，大小：${file.size} bytes。非文本附件已记录文件信息。`);
+      resolve(`${t("attachment")}：${file.name}，${t("attachmentType")}：${file.type || t("unknown")}，${t("attachmentSize")}：${file.size} bytes。${t("nonTextAttachment")}`);
       return;
     }
 
     const reader = new FileReader();
 
     reader.onload = () => {
-      resolve(`附件：${file.name}\n${String(reader.result || "")}`);
+      resolve(`${t("attachment")}：${file.name}\n${String(reader.result || "")}`);
     };
 
     reader.onerror = () => {
-      resolve(`附件：${file.name} 读取失败。`);
+      resolve(`${t("attachment")}：${file.name} ${t("attachmentReadFailed")}`);
     };
 
     reader.readAsText(file);
@@ -922,7 +1200,7 @@ const buildUserContent = async (message) => {
   }
 
   const attachmentTexts = await Promise.all(pendingAttachments.map(readAttachment));
-  return `${message}\n\n以下是本轮用户上传的附件内容：\n${attachmentTexts.join("\n\n---\n\n")}`;
+  return `${message}\n\n${t("uploadedAttachments")}\n${attachmentTexts.join("\n\n---\n\n")}`;
 };
 
 const requestReply = async (signal) => {
@@ -936,6 +1214,7 @@ const requestReply = async (signal) => {
     body: JSON.stringify({
       provider: providerSelect?.value || aiConfig.provider,
       model: modelSelect.value,
+      baseUrl: aiConfig.baseUrl,
       thinking: thinkingToggle.checked,
       webSearch: currentUser?.role === "admin" && searchToggle?.checked,
       messages: [systemPrompt, ...active.messages.map(({ role, content }) => ({ role, content }))],
@@ -945,11 +1224,11 @@ const requestReply = async (signal) => {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.error || "AI 请求失败");
+    throw new Error(data.error || t("aiRequestFailed"));
   }
 
   return {
-    content: data.content || "没有收到有效回复。",
+    content: data.content || t("noValidReply"),
     reasoning: data.reasoning || "",
     finishReason: data.finishReason || "",
     usage: data.usage || null,
@@ -972,18 +1251,18 @@ form?.addEventListener("submit", async (event) => {
 
   const active = currentConversation();
   const displayContent = pendingAttachments.length
-    ? `${message || "请分析附件"}\n\n附件：${pendingAttachments.map((file) => file.name).join("、")}`
+    ? `${message || t("analyzeAttachment")}\n\n${t("attachment")}：${pendingAttachments.map((file) => file.name).join("、")}`
     : message;
 
   setError("");
   setLoading(true);
 
   try {
-    const content = await buildUserContent(message || "请分析附件");
+    const content = await buildUserContent(message || t("analyzeAttachment"));
     const time = formatTime();
     active.messages.push({ role: "user", content, displayContent, time });
     updateHeroVisibility();
-    updateConversationMeta(message || pendingAttachments[0]?.name || "附件对话");
+    updateConversationMeta(message || pendingAttachments[0]?.name || t("attachmentConversation"));
     addUserMessage(displayContent, time);
     input.value = "";
     pendingAttachments = [];
@@ -999,7 +1278,7 @@ form?.addEventListener("submit", async (event) => {
     reply.content = normalizeMarkdown(reply.content);
     reply.reasoning = normalizeMarkdown(reply.reasoning);
     const isTruncated = ["length", "max_tokens", "content_filter"].includes(reply.finishReason);
-    const warning = isTruncated ? "回复可能因为长度限制没有完整生成，可以让我“继续上面的内容”。" : "";
+    const warning = isTruncated ? t("truncatedWarning") : "";
     thinkingMessage?.remove();
     const replyTime = formatTime();
     active.messages.push({
@@ -1021,9 +1300,9 @@ form?.addEventListener("submit", async (event) => {
       return;
     }
 
-    const fallback = error.message || "请求失败，请稍后再试。";
+    const fallback = error.message || t("requestFailedLater");
     setError(fallback);
-    addAssistantMessage(`请求失败：${fallback}`);
+    addAssistantMessage(`${t("requestFailedPrefix")}${fallback}`);
   } finally {
     activeChatController = null;
     saveConversations();
@@ -1161,7 +1440,7 @@ voiceButton?.addEventListener("click", () => {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    setError("当前浏览器不支持语音转文字，建议使用 Chrome 或 Edge。");
+    setError(t("speechRecognitionUnsupported"));
     return;
   }
 
@@ -1180,7 +1459,7 @@ voiceButton?.addEventListener("click", () => {
     };
 
     recognition.onerror = () => {
-      setError("语音识别失败，请检查麦克风权限。");
+      setError(t("speechRecognitionFailed"));
       voiceButton.classList.remove("recording");
     };
 
@@ -1197,6 +1476,12 @@ voiceButton?.addEventListener("click", () => {
 
 settingsButton?.addEventListener("click", () => {
   settingsMenu.classList.toggle("open");
+});
+
+languageToggle?.addEventListener("click", () => {
+  currentLanguage = currentLanguage === "en" ? "zh" : "en";
+  localStorage.setItem(languageStorageKey, currentLanguage);
+  applyLanguage();
 });
 
 configOpen?.addEventListener("click", () => {
@@ -1225,13 +1510,28 @@ ttsConfigCancel?.addEventListener("click", () => {
   applyTtsConfigToUi();
 });
 
+ttsConfigProviderSelect?.addEventListener("change", () => {
+  if (ttsConfigModelInput) {
+    ttsConfigModelInput.value = "";
+  }
+
+  if (ttsConfigBaseUrlInput) {
+    ttsConfigBaseUrlInput.value = "";
+  }
+
+  if (ttsConfigVoiceInput) {
+    ttsConfigVoiceInput.value = "";
+  }
+
+  if (ttsConfigApiKeyInput) {
+    ttsConfigApiKeyInput.value = "";
+  }
+});
+
 providerSelect?.addEventListener("change", () => {
   aiConfig.provider = providerSelect.value;
-  const models = modelOptionsForProvider(providerSelect.value);
-
-  if (models.length) {
-    aiConfig.model = models[0];
-  }
+  aiConfig.model = "";
+  aiConfig.baseUrl = "";
 
   renderModelSuggestions(providerSelect.value);
   renderComposerModelOptions();
@@ -1241,16 +1541,31 @@ providerSelect?.addEventListener("change", () => {
   }
 
   if (configModelInput) {
-    configModelInput.value = aiConfig.model;
+    configModelInput.value = "";
+  }
+
+  if (configBaseUrlInput) {
+    configBaseUrlInput.value = "";
+  }
+
+  if (configApiKeyInput) {
+    configApiKeyInput.value = "";
   }
 });
 
 configProviderSelect?.addEventListener("change", () => {
-  const models = modelOptionsForProvider(configProviderSelect.value);
   renderModelSuggestions(configProviderSelect.value);
 
-  if (models.length) {
-    configModelInput.value = models[0];
+  if (configModelInput) {
+    configModelInput.value = "";
+  }
+
+  if (configBaseUrlInput) {
+    configBaseUrlInput.value = "";
+  }
+
+  if (configApiKeyInput) {
+    configApiKeyInput.value = "";
   }
 });
 
@@ -1265,13 +1580,14 @@ configForm?.addEventListener("submit", async (event) => {
       body: JSON.stringify({
         provider: formData.get("provider"),
         model: formData.get("model"),
+        baseUrl: formData.get("baseUrl"),
         apiKey: formData.get("apiKey"),
       }),
     });
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      setError(data.error || "保存配置失败");
+      setError(data.error || t("configSaveFailed"));
       return;
     }
 
@@ -1284,11 +1600,11 @@ configForm?.addEventListener("submit", async (event) => {
           : aiConfig.providers,
     };
     applyConfigToUi();
-    setError("配置已保存");
+    setError(t("configSaved"));
     configModal.hidden = true;
     configForm.reset();
   } catch (error) {
-    setError(error.message || "保存配置失败");
+    setError(error.message || t("configSaveFailed"));
   }
 });
 
@@ -1301,7 +1617,9 @@ ttsConfigForm?.addEventListener("submit", async (event) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        provider: formData.get("provider"),
         model: formData.get("model"),
+        baseUrl: formData.get("baseUrl"),
         voice: formData.get("voice"),
         apiKey: formData.get("apiKey"),
       }),
@@ -1309,7 +1627,7 @@ ttsConfigForm?.addEventListener("submit", async (event) => {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      setError(data.error || "保存语音配置失败");
+      setError(data.error || t("voiceConfigSaveFailed"));
       return;
     }
 
@@ -1318,11 +1636,11 @@ ttsConfigForm?.addEventListener("submit", async (event) => {
       ...(data.config || {}),
     };
     applyTtsConfigToUi();
-    setError("语音配置已保存");
+    setError(t("voiceConfigSaved"));
     ttsConfigModal.hidden = true;
     ttsConfigForm.reset();
   } catch (error) {
-    setError(error.message || "保存语音配置失败");
+    setError(error.message || t("voiceConfigSaveFailed"));
   }
 });
 
@@ -1338,7 +1656,7 @@ const ensureAuth = async () => {
 
   const data = await response.json();
   currentUser = data.user;
-  profileName.textContent = currentUser.displayName || currentUser.username;
+  updateProfileName();
   adminOnlyLinks.forEach((item) => {
     item.hidden = currentUser.role !== "admin";
   });
@@ -1374,4 +1692,5 @@ const refreshPendingBadge = async () => {
   });
 };
 
+applyLanguage();
 ensureAuth();

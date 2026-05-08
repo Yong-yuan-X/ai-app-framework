@@ -1,11 +1,7 @@
-import os
-
-from .common import env_int, post_json, responses_api_text
+from .common import endpoint_url, env_int, post_json, responses_api_text
 
 
 def call_doubao_chat(api_key, model, messages, options, ssl_context):
-    base_url = (os.getenv("DOUBAO_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3").rstrip("/")
-    api_url = os.getenv("DOUBAO_RESPONSES_API_URL") or f"{base_url}/responses"
     request_body = {
         "model": model,
         "input": messages,
@@ -16,7 +12,7 @@ def call_doubao_chat(api_key, model, messages, options, ssl_context):
         request_body["tools"] = [{"type": "web_search"}]
 
     data = post_json(
-        api_url,
+        endpoint_url(options.get("base_url"), "/responses"),
         request_body,
         {"Authorization": f"Bearer {api_key}"},
         env_int("DOUBAO_TIMEOUT_SECONDS", 120),

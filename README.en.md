@@ -1,6 +1,6 @@
 # Personal AI App Framework
 
-A local AI chat framework with a lightweight Python backend and a static frontend. Also available in [Simplified Chinese](README.md) and [Traditional Chinese](README.zh-HK.md).
+A local AI chat framework with a lightweight Python backend and a static frontend. Also available in [Simplified Chinese](README.md).
 
 ## Run
 
@@ -22,27 +22,34 @@ PORT=8081 python3 app.py
 
 Use the bottom-left settings menu to configure chat models and voice settings. Values are saved to the local `.env` file.
 
-Supported chat providers: Xiaomi, Doubao, Qwen, GPT, Claude, and Gemini. You can enter your own model name and API key for each provider, and toggle web search or Thinking when supported.
+Supported chat providers: Xiaomi, Doubao, Qwen, GPT, Claude, Gemini, and DeepSeek. You can enter your own model name, Base URL, and API key for each provider, and toggle web search or Thinking when supported.
+
+Supported voice providers: Xiaomi, OpenAI, and Gemini. You can enter your own voice model name, Base URL, voice, and API key for each provider.
 
 Common environment variables:
 
 ```text
 AI_PROVIDER
 AI_MODEL
+TTS_PROVIDER
 MIMO_API_KEY
 DOUBAO_API_KEY
 QWEN_API_KEY
 OPENAI_API_KEY
+DEEPSEEK_API_KEY
 ANTHROPIC_API_KEY
 GEMINI_API_KEY
 MIMO_TTS_API_KEY
+MIMO_TTS_API_URL
 MIMO_TTS_MODEL
 MIMO_TTS_VOICE
+OPENAI_TTS_API_KEY
+OPENAI_TTS_API_URL
+GEMINI_TTS_API_KEY
+GEMINI_TTS_API_URL
 AI_RATE_LIMIT_PER_HOUR
 AI_MAX_REQUEST_SIZE_BYTES
 ```
-
-Voice playback currently uses Xiaomi MiMo TTS. If `MIMO_TTS_API_KEY` is not set, the backend will try to reuse `MIMO_API_KEY`.
 
 ## Features
 

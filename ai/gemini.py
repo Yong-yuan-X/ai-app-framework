@@ -1,4 +1,3 @@
-import os
 import urllib.parse
 
 from .common import env_int, normalize_usage, post_json, split_system_messages
@@ -31,7 +30,9 @@ def call_gemini_chat(api_key, model, messages, options, ssl_context):
             "includeThoughts": True,
         }
 
-    base_url = (os.getenv("GEMINI_API_URL") or "https://generativelanguage.googleapis.com/v1beta").rstrip("/")
+    base_url = str(options.get("base_url") or "").strip().rstrip("/")
+    if not base_url:
+        raise ValueError("Base URL 不能为空")
     model_path = urllib.parse.quote(model, safe="")
     url = f"{base_url}/models/{model_path}:generateContent"
     data = post_json(

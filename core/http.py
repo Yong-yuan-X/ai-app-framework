@@ -38,9 +38,10 @@ def api_error(handler, error, fallback_message, provider_label="API"):
     except json.JSONDecodeError:
         detail = {"raw": response_text}
 
-    message = (
+    raw_message = (
         detail.get("error", {}).get("message")
         if isinstance(detail.get("error"), dict)
         else detail.get("message", fallback_message)
     )
+    message = f"{provider_label}：{raw_message}" if raw_message else fallback_message
     json_response(handler, error.code, {"error": message, "detail": detail})
