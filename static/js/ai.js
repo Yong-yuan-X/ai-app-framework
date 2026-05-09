@@ -45,7 +45,7 @@ const reviewLinks = [...document.querySelectorAll(".admin-only")].filter((item) 
 const storageKeyPrefix = "foreverHubAiConversations";
 const languageStorageKey = "foreverHubAiLanguage";
 const textFilePattern = /^(text\/|application\/(json|xml|javascript|x-javascript))/;
-const readableExtensions = /\.(txt|md|csv|json|js|ts|tsx|jsx|py|java|go|rs|c|cpp|h|css|html|xml|yaml|yml|sql|log)$/i;
+const readableExtensions = /\.(txt|md|csv|json|js|ts|tsx|jsx|vue|svelte|py|java|go|rs|c|cpp|h|css|html|xml|yaml|yml|toml|ini|env|sql|log|sh|bat|ps1|php|rb)$/i;
 const translations = {
   zh: {
     pageTitle: "自用AI · 独立框架",
@@ -1159,27 +1159,25 @@ const renderAttachments = () => {
     .join("");
 };
 
-const readAttachment = (file) => {
-  return new Promise((resolve) => {
-    const isReadable = textFilePattern.test(file.type) || readableExtensions.test(file.name);
+const attachmentHeader = (file) => [
+  `${t("attachment")}: ${file.name}`,
+  `${t("attachmentType")}: ${file.type || t("unknown")}`,
+  `${t("attachmentSize")}: ${file.size} bytes`,
+].join("\n");
 
-    if (!isReadable) {
-      resolve(`${t("attachment")}：${file.name}，${t("attachmentType")}：${file.type || t("unknown")}，${t("attachmentSize")}：${file.size} bytes。${t("nonTextAttachment")}`);
-      return;
-    }
+const readAttachment = async (file) => {
+  const isReadable = textFilePattern.test(file.type) || readableExtensions.test(file.name);
 
-    const reader = new FileReader();
+  if (!isReadable) {
+    return `${attachmentHeader(file)}\n${t("nonTextAttachment")}`;
+  }
 
-    reader.onload = () => {
-      resolve(`${t("attachment")}：${file.name}\n${String(reader.result || "")}`);
-    };
-
-    reader.onerror = () => {
-      resolve(`${t("attachment")}：${file.name} ${t("attachmentReadFailed")}`);
-    };
-
-    reader.readAsText(file);
-  });
+  try {
+    const content = await file.text();
+    return `${attachmentHeader(file)}\n\n${content || ""}`;
+  } catch {
+    return `${attachmentHeader(file)}\n${t("attachmentReadFailed")}`;
+  }
 };
 
 const addAttachments = (files = []) => {
@@ -1250,9 +1248,11 @@ form?.addEventListener("submit", async (event) => {
   }
 
   const active = currentConversation();
-  const displayContent = pendingAttachments.length
-    ? `${message || t("analyzeAttachment")}\n\n${t("attachment")}：${pendingAttachments.map((file) => file.name).join("、")}`
-    : message;
+  let displayContent = message;
+
+  if (pendingAttachments.length) {
+    displayContent = `${message || t("analyzeAttachment")}\n\n${t("attachment")}: ${pendingAttachments.map((file) => file.name).join(", ")}`;
+  }
 
   setError("");
   setLoading(true);
@@ -1316,10 +1316,24 @@ form?.addEventListener("submit", async (event) => {
 input?.addEventListener("input", resizeInput);
 
 input?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-    event.preventDefault();
-    form.requestSubmit();
+  if (event.key !== "Enter" || event.shiftKey) {
+    return;
   }
+
+  if (event.isComposing || event.keyCode === 229) {
+    return;
+  }
+
+  if (!form) {
+    return;
+  }
+
+  if (event.altKey) {
+    return;
+  }
+
+  event.preventDefault();
+  form.requestSubmit();
 });
 
 historyList?.addEventListener("click", (event) => {
