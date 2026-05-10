@@ -2,7 +2,7 @@
 
 <img width="2718" height="1704" alt="img_v3_0211b_cf86d7dd-c5b3-4f36-b8ca-543c7c66a9bg" src="https://github.com/user-attachments/assets/c47a5c9d-8de1-4707-a892-3de8071a5ae5" />
 
-轻量 Python 后端 + 静态前端的本地 AI 聊天框架。另有 [English](README.en.md)。
+ [English](README.en.md)。
 
 ## 运行
 
@@ -26,7 +26,7 @@ PORT=8081 python3 app.py
 
 聊天厂商：小米、豆包、千问、GPT、Claude、Gemini、DeepSeek。每个厂商可自行填写模型名、Base URL 和 API Key，并可开启联网搜索或 Thinking。
 
-语音厂商：小米、OpenAI、Gemini。每个厂商可自行填写语音模型名、Base URL、音色和 API Key。
+语音厂商：小米、OpenAI、Gemini。每个厂商可自行填写语音模型名、Base URL、音色和 API Key。其他模型暂时没有支持
 
 常用环境变量：
 
