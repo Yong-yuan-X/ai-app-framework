@@ -1,8 +1,9 @@
 # 自用 AI 独立框架
 
+ [English](README.en.md)
+
 <img width="2718" height="1704" alt="img_v3_0211b_cf86d7dd-c5b3-4f36-b8ca-543c7c66a9bg" src="https://github.com/user-attachments/assets/c47a5c9d-8de1-4707-a892-3de8071a5ae5" />
 
- [English](README.en.md)。
 
 ## 运行
 
